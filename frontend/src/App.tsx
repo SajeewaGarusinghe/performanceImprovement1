@@ -25,10 +25,10 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
   }
 
   return (
-    <div style={{ border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="card">
+      <div className="card-head">
         <h3 style={{ margin: 0 }}>{title}</h3>
-        <button onClick={run} disabled={loading}>{loading ? 'Running...' : 'Run'}</button>
+        <button className="btn" onClick={run} disabled={loading}>{loading ? 'Running...' : 'Run'}</button>
       </div>
       {(before.data?.executionTimeMs !== undefined && after.data?.executionTimeMs !== undefined) && (
         <div className="compare-summary">
@@ -42,6 +42,10 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
             const aWidth = Math.max(2, Math.round((a / worst) * 100))
             return (
               <>
+                <div className="kpis">
+                  <div className="kpi"><span className="kpi-title">Before Time</span><span className="kpi-value">{b} ms</span></div>
+                  <div className="kpi"><span className="kpi-title">After Time</span><span className="kpi-value">{a} ms</span></div>
+                </div>
                 <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>Δ {diff} ms</span>
                 <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>{diff > 0 ? `↓ ${pct}% faster` : diff < 0 ? `↑ ${Math.abs(pct)}% slower` : 'no change'}</span>
                 <div className="bars" style={{ width: '100%', maxWidth: 480 }}>
@@ -65,6 +69,10 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
             const aWidth = Math.max(2, Math.round((a / worst) * 100))
             return (
               <>
+                <div className="kpis">
+                  <div className="kpi"><span className="kpi-title">Before Memory</span><span className="kpi-value">{formatBytes(b)}</span></div>
+                  <div className="kpi"><span className="kpi-title">After Memory</span><span className="kpi-value">{formatBytes(a)}</span></div>
+                </div>
                 <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>Δ {formatBytes(diff)} ({diff} B)</span>
                 <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>{diff > 0 ? `↓ ${pct}% less memory` : diff < 0 ? `↑ ${Math.abs(pct)}% more memory` : 'no change'}</span>
                 <div className="bars" style={{ width: '100%', maxWidth: 480 }}>
@@ -112,13 +120,21 @@ export default function App() {
     return () => { cancelled = true }
   }, [])
 
+  useEffect(() => {
+    const t = getTheme()
+    document.documentElement.setAttribute('data-theme', t)
+  }, [])
+
   return (
-    <div style={{ maxWidth: 1100, margin: '24px auto', padding: '0 16px', fontFamily: 'Inter, system-ui, Arial' }}>
-      <h1>Performance Demo</h1>
-      <div style={{ padding: 10, borderRadius: 6, background: apiHealth.status === 'ok' ? '#e9f8ee' : apiHealth.status === 'error' ? '#fdeaea' : '#f5f5f5', color: '#333', marginBottom: 12 }}>
+    <div className="container">
+      <div className="header">
+        <div className="title">Performance Demo</div>
+        <button className="theme-toggle" onClick={() => toggleTheme()}>{getNextThemeLabel()}</button>
+      </div>
+      <div className="card" style={{ marginBottom: 12 }}>
         <strong>API:</strong> {apiHealth.status === 'idle' ? 'Checking...' : apiHealth.status === 'ok' ? apiHealth.msg : `Error: ${apiHealth.msg}`}
       </div>
-      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div className="controls">
         <label>
           Customer IDs
           <input value={idsInput} onChange={e => setIdsInput(e.target.value)} style={{ marginLeft: 8 }} />
@@ -176,6 +192,22 @@ function formatBytes(bytes: number): string {
   const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024))
   const val = bytes / Math.pow(1024, i)
   return `${val.toFixed(2)} ${sizes[i]}`
+}
+
+function getTheme(): 'dark'|'light' {
+  const saved = localStorage.getItem('theme') as 'dark'|'light'|null
+  return saved ?? 'dark'
+}
+
+function getNextThemeLabel(): string {
+  return getTheme() === 'dark' ? 'Switch to Light' : 'Switch to Dark'
+}
+
+function toggleTheme() {
+  const current = getTheme()
+  const next = current === 'dark' ? 'light' : 'dark'
+  localStorage.setItem('theme', next)
+  document.documentElement.setAttribute('data-theme', next)
 }
 
 

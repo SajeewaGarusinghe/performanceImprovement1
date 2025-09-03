@@ -1,19 +1,63 @@
-:root { color-scheme: light dark; }
-body { margin: 0; background: #111; color: #eaeaea; font-family: Inter, system-ui, Arial; }
-button { cursor: pointer; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: #fff; }
-input { padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; }
+:root {
+  color-scheme: light dark;
+  --bg: #0b1020;
+  --bg-elev: #111733;
+  --text: #e6e8f2;
+  --muted: #9aa3b2;
+  --card: #151c3b;
+  --border: #25305a;
+  --accent: #7c4dff;
+  --accent-2: #00d1b2;
+  --good: #27ae60;
+  --bad: #e74c3c;
+}
 
-.result-card { background: #ffffff; color: #111111; }
-.result-card pre { color: #333333; }
+[data-theme="light"] {
+  --bg: #f6f7fb;
+  --bg-elev: #ffffff;
+  --text: #111321;
+  --muted: #475569;
+  --card: #ffffff;
+  --border: #e5e7eb;
+  --accent: #5b6cff;
+  --accent-2: #06b6d4;
+  --good: #16a34a;
+  --bad: #dc2626;
+}
+
+body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial; }
+
+.container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+.header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.title { font-size: 28px; font-weight: 700; }
+.theme-toggle { border: 1px solid var(--border); background: var(--bg-elev); color: var(--text); padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+
+.controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+.controls label { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--muted); }
+input { padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-elev); color: var(--text); }
+
+.card { border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 16px; background: var(--card); }
+.card-head { display: flex; justify-content: space-between; align-items: center; }
+.btn { cursor: pointer; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--accent); background: transparent; color: var(--accent); }
+.btn:hover { background: color-mix(in oklab, var(--accent) 15%, transparent); }
+
+.result-card { background: var(--bg-elev); color: var(--text); border: 1px solid var(--border); }
+.result-card pre { color: var(--muted); }
 
 .compare-summary { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
-.chip { padding: 4px 8px; border-radius: 999px; background: #2b2b2b; color: #f0f0f0; font-size: 12px; border: 1px solid #444; }
-.chip.good { background: #0c6; color: #002b16; border-color: #0a5; }
-.chip.bad { background: #f66; color: #3b0000; border-color: #e44; }
+.chip { padding: 6px 10px; border-radius: 999px; background: var(--bg-elev); color: var(--text); font-size: 13px; font-weight: 700; border: 1px solid var(--border); }
+.chip.good { background: color-mix(in oklab, var(--good) 20%, var(--bg)); color: #03150b; border-color: var(--good); }
+.chip.bad { background: color-mix(in oklab, var(--bad) 20%, var(--bg)); color: #200505; border-color: var(--bad); }
 .bars { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 6px; }
-.bar { height: 10px; border-radius: 6px; background: linear-gradient(90deg, #888, #bbb); position: relative; overflow: hidden; }
-.bar.before { background: linear-gradient(90deg, #888, #bbb); }
-.bar.after { background: linear-gradient(90deg, #6fcf97, #27ae60); }
-.bar > span { position: absolute; left: 6px; top: -2px; font-size: 10px; color: #111; }
+.bar { height: 14px; border-radius: 6px; background: linear-gradient(90deg, #888, #bbb); position: relative; overflow: hidden; }
+.bar.before { background: linear-gradient(90deg, #68708d, #8e97b3); }
+.bar.after { background: linear-gradient(90deg, var(--accent-2), #1fbf9a); }
+.bar > span { position: absolute; left: 6px; top: -1px; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.6); }
+
+/* KPI blocks for quick, high-contrast stats */
+.kpis { display: flex; flex-wrap: wrap; gap: 12px; margin: 10px 0 6px; }
+.kpi { background: var(--bg-elev); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; min-width: 140px; }
+.kpi-title { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+.kpi-value { font-size: 20px; font-weight: 800; letter-spacing: 0.2px; }
 
 
