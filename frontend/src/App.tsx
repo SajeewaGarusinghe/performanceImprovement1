@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { api, PerfResponse } from './api'
 
-type RunResult = { label: string; data?: PerfResponse; error?: string }
+type RunResult = { label: string; data?: PerfResponse & { memoryUsedBytes?: number }; error?: string }
 
 function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Promise<PerfResponse>; onAfter: () => Promise<PerfResponse> }) {
   const [before, setBefore] = useState<RunResult>({ label: 'Before' })
@@ -53,11 +53,35 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
           })()}
         </div>
       )}
+      {(before.data?.memoryUsedBytes !== undefined && after.data?.memoryUsedBytes !== undefined) && (
+        <div className="compare-summary">
+          {(() => {
+            const b = before.data!.memoryUsedBytes as number
+            const a = after.data!.memoryUsedBytes as number
+            const diff = b - a
+            const pct = b > 0 ? Math.round((diff / b) * 100) : 0
+            const worst = Math.max(b, a) || 1
+            const bWidth = Math.max(2, Math.round((b / worst) * 100))
+            const aWidth = Math.max(2, Math.round((a / worst) * 100))
+            return (
+              <>
+                <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>Δ {formatBytes(diff)} ({diff} B)</span>
+                <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>{diff > 0 ? `↓ ${pct}% less memory` : diff < 0 ? `↑ ${Math.abs(pct)}% more memory` : 'no change'}</span>
+                <div className="bars" style={{ width: '100%', maxWidth: 480 }}>
+                  <div className="bar before" style={{ width: bWidth + '%' }}><span>before {formatBytes(b)}</span></div>
+                  <div className="bar after" style={{ width: aWidth + '%' }}><span>after {formatBytes(a)}</span></div>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
         {[before, after].map((r) => (
           <div key={r.label} className="result-card" style={{ padding: 12, borderRadius: 6 }}>
             <strong>{r.label}</strong>
             <div>Time: {r.data?.executionTimeMs ?? '-' } ms</div>
+            {r.data?.memoryUsedBytes !== undefined && (<div>Memory: {formatBytes(r.data.memoryUsedBytes)} ({r.data.memoryUsedBytes} B)</div>)}
             <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.error ? `Error: ${r.error}` : JSON.stringify(r.data?.result ?? {}, null, 2)}</pre>
           </div>
         ))}
@@ -71,6 +95,7 @@ export default function App() {
   const ids = useMemo(() => idsInput.split(',').map(s => parseInt(s.trim(), 10)).filter(n => !Number.isNaN(n)), [idsInput])
   const [size, setSize] = useState(50000)
   const [target, setTarget] = useState(49999)
+  const [repeats, setRepeats] = useState(1000)
   const [apiHealth, setApiHealth] = useState<{ status: 'idle'|'ok'|'error', msg?: string }>({ status: 'idle' })
 
   useEffect(() => {
@@ -106,6 +131,10 @@ export default function App() {
           Target
           <input type="number" value={target} onChange={e => setTarget(parseInt(e.target.value, 10))} style={{ marginLeft: 8, width: 120 }} />
         </label>
+        <label>
+          Lookups
+          <input type="number" value={repeats} onChange={e => setRepeats(parseInt(e.target.value, 10))} style={{ marginLeft: 8, width: 120 }} />
+        </label>
       </div>
 
       <Row title="1) N+1 vs Batch Query"
@@ -119,8 +148,8 @@ export default function App() {
       />
 
       <Row title="3) Lookup: O(n) vs O(1)"
-        onBefore={() => api.lookupBefore(size, target)}
-        onAfter={() => api.lookupAfter(size, target)}
+        onBefore={() => api.lookupBefore(size, target, repeats)}
+        onAfter={() => api.lookupAfter(size, target, repeats)}
       />
 
       <Row title="4) Streams Side-Effects vs For-Loop"
@@ -139,6 +168,14 @@ export default function App() {
       />
     </div>
   )
+}
+
+function formatBytes(bytes: number): string {
+  const sizes = ['B','KB','MB','GB','TB']
+  if (bytes === 0) return '0 B'
+  const i = Math.floor(Math.log(Math.abs(bytes)) / Math.log(1024))
+  const val = bytes / Math.pow(1024, i)
+  return `${val.toFixed(2)} ${sizes[i]}`
 }
 
 

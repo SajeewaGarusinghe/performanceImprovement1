@@ -51,55 +51,66 @@ public class PerformanceService {
         return response(duration, grouped.size());
     }
 
-    // 2. Memory Leak vs Cleanup
+    // 2. Memory Leak vs Cleanup (report memory footprint)
     public Map<String, Object> memoryBefore(int size) {
         long start = System.currentTimeMillis();
+        long baseline = currentUsedMemoryBytes();
         List<int[]> heavy = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             heavy.add(new int[1024]);
         }
-        // simulate processing without cleanup
         int sum = heavy.stream().mapToInt(arr -> arr.length).sum();
+        long used = currentUsedMemoryBytes();
+        long memoryDelta = Math.max(0, used - baseline);
         long duration = System.currentTimeMillis() - start;
-        log.info("Memory Before Execution Time: {} ms, sum={}", duration, sum);
-        return response(duration, sum);
+        log.info("Memory Before: time={} ms, deltaBytes={} (sum={})", duration, memoryDelta, sum);
+        return responseWithMemory(duration, sum, memoryDelta);
     }
 
     public Map<String, Object> memoryAfter(int size) {
         long start = System.currentTimeMillis();
+        long baseline = currentUsedMemoryBytes();
         List<int[]> heavy = new ArrayList<>();
         for (int i = 0; i < size; i++) {
             heavy.add(new int[1024]);
         }
         int sum = heavy.stream().mapToInt(arr -> arr.length).sum();
-        // cleanup
         heavy.clear();
-        // help GC
         heavy = null;
+        System.gc();
+        try { Thread.sleep(50); } catch (InterruptedException ignored) { }
+        long used = currentUsedMemoryBytes();
+        long memoryDelta = Math.max(0, used - baseline);
         long duration = System.currentTimeMillis() - start;
-        log.info("Memory After Execution Time: {} ms, sum={}", duration, sum);
-        return response(duration, sum);
+        log.info("Memory After: time={} ms, deltaBytes={} (sum={})", duration, memoryDelta, sum);
+        return responseWithMemory(duration, sum, memoryDelta);
     }
 
-    // 3. Inefficient Lookups vs HashMap Optimization
-    public Map<String, Object> lookupBefore(int size, int target) {
+    // 3. Inefficient Lookups vs HashMap Optimization (many repeated lookups)
+    public Map<String, Object> lookupBefore(int size, int target, int repeats) {
         long start = System.currentTimeMillis();
         List<Integer> list = new ArrayList<>();
         for (int i = 0; i < size; i++) list.add(i);
-        boolean exists = list.stream().anyMatch(x -> x == target);
+        int hits = 0;
+        for (int i = 0; i < repeats; i++) {
+            if (list.stream().anyMatch(x -> x == target)) hits++;
+        }
         long duration = System.currentTimeMillis() - start;
-        log.info("Lookup Before Execution Time: {} ms, exists={}", duration, exists);
-        return response(duration, exists ? 1 : 0);
+        log.info("Lookup Before Execution Time: {} ms, hits={}", duration, hits);
+        return response(duration, hits);
     }
 
-    public Map<String, Object> lookupAfter(int size, int target) {
+    public Map<String, Object> lookupAfter(int size, int target, int repeats) {
         long start = System.currentTimeMillis();
         Map<Integer, Boolean> map = new HashMap<>();
         for (int i = 0; i < size; i++) map.put(i, Boolean.TRUE);
-        boolean exists = map.containsKey(target);
+        int hits = 0;
+        for (int i = 0; i < repeats; i++) {
+            if (map.containsKey(target)) hits++;
+        }
         long duration = System.currentTimeMillis() - start;
-        log.info("Lookup After Execution Time: {} ms, exists={}", duration, exists);
-        return response(duration, exists ? 1 : 0);
+        log.info("Lookup After Execution Time: {} ms, hits={}", duration, hits);
+        return response(duration, hits);
     }
 
     // 4. Stream Side-Effects vs For-Loop
@@ -195,6 +206,17 @@ public class PerformanceService {
         map.put("executionTimeMs", ms);
         map.put("result", resultSize);
         return map;
+    }
+
+    private Map<String, Object> responseWithMemory(long ms, Object resultSize, long memoryBytes) {
+        Map<String, Object> map = response(ms, resultSize);
+        map.put("memoryUsedBytes", memoryBytes);
+        return map;
+    }
+
+    private long currentUsedMemoryBytes() {
+        Runtime rt = Runtime.getRuntime();
+        return rt.totalMemory() - rt.freeMemory();
     }
 }
 

@@ -43,14 +43,16 @@ public class PerformanceController {
     // 3. Lookup
     @GetMapping("/lookup/before")
     public ResponseEntity<Map<String, Object>> lookupBefore(@RequestParam(defaultValue = "100000") int size,
-                                                            @RequestParam(defaultValue = "99999") int target) {
-        return ResponseEntity.ok(performanceService.lookupBefore(size, target));
+                                                            @RequestParam(defaultValue = "99999") int target,
+                                                            @RequestParam(defaultValue = "1000") int repeats) {
+        return ResponseEntity.ok(performanceService.lookupBefore(size, target, repeats));
     }
 
     @GetMapping("/lookup/after")
     public ResponseEntity<Map<String, Object>> lookupAfter(@RequestParam(defaultValue = "100000") int size,
-                                                           @RequestParam(defaultValue = "99999") int target) {
-        return ResponseEntity.ok(performanceService.lookupAfter(size, target));
+                                                           @RequestParam(defaultValue = "99999") int target,
+                                                           @RequestParam(defaultValue = "1000") int repeats) {
+        return ResponseEntity.ok(performanceService.lookupAfter(size, target, repeats));
     }
 
     // 4. Streams vs loops
