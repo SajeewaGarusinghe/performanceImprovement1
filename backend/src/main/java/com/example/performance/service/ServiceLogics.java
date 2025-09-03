@@ -17,16 +17,6 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-/**
- * OptimizedPerformanceService
- *
- * This class holds the "After" (optimized) implementations for the demo.
- * Keeping them in a separate service makes it easier to showcase the
- * improvements side-by-side with the baseline implementations in
- * PerformanceService.
- *
- * Each method includes comments that explain the core idea concisely.
- */
 @Service
 public class ServiceLogics {
 
