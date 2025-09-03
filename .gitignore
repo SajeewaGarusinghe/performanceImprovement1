@@ -1,0 +1,57 @@
+# Java
+*.class
+*.jar
+*.war
+*.ear
+
+# Maven
+/target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Others
+*.swp
+*.swo
+
+# Ignore environment files
+.env
+
+# Ignore test output
+/test-classes/
+/generated-sources/
+/generated-test-sources/
+
+# Ignore application config overrides
+application-local.yml
+application-dev.yml
+application-prod.yml
+.settings/
+
+# VS Code
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node (future frontend)
+node_modules/
+dist/
+build/
+
+# Env
+.env
+
+

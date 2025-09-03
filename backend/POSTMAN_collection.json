@@ -1,0 +1,71 @@
+{
+  "info": {
+    "name": "Performance Demo API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_postman_id": "c8a2f2c0-1111-4a2b-9d0a-1d1111111abc"
+  },
+  "item": [
+    {
+      "name": "N+1 Before",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "url": { "raw": "http://localhost:8080/api/performance/nplus1/before", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "performance", "nplus1", "before"] },
+        "body": { "mode": "raw", "raw": "[1,2,3,4,5]" }
+      }
+    },
+    {
+      "name": "N+1 After",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": { "raw": "http://localhost:8080/api/performance/nplus1/after", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api", "performance", "nplus1", "after"] },
+        "body": { "mode": "raw", "raw": "[1,2,3,4,5]" }
+      }
+    },
+    {
+      "name": "Memory Before",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/memory/before?size=20000", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","memory","before"], "query": [{"key":"size","value":"20000"}] } }
+    },
+    {
+      "name": "Memory After",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/memory/after?size=20000", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","memory","after"], "query": [{"key":"size","value":"20000"}] } }
+    },
+    {
+      "name": "Lookup Before",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/lookup/before?size=200000&target=199999", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","lookup","before"], "query": [{"key":"size","value":"200000"},{"key":"target","value":"199999"}] } }
+    },
+    {
+      "name": "Lookup After",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/lookup/after?size=200000&target=199999", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","lookup","after"], "query": [{"key":"size","value":"200000"},{"key":"target","value":"199999"}] } }
+    },
+    {
+      "name": "Stream Before",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/stream/before?size=200000", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","stream","before"], "query": [{"key":"size","value":"200000"}] } }
+    },
+    {
+      "name": "Stream After",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/stream/after?size=200000", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","stream","after"], "query": [{"key":"size","value":"200000"}] } }
+    },
+    {
+      "name": "Cache Before",
+      "request": { "method": "POST", "header": [ {"key":"Content-Type","value":"application/json"} ], "url": { "raw": "http://localhost:8080/api/performance/cache/before", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","cache","before"] }, "body": {"mode":"raw","raw":"[1,2,3,4,5]"} }
+    },
+    {
+      "name": "Cache After",
+      "request": { "method": "POST", "header": [ {"key":"Content-Type","value":"application/json"} ], "url": { "raw": "http://localhost:8080/api/performance/cache/after", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","cache","after"] }, "body": {"mode":"raw","raw":"[1,2,3,4,5]"} }
+    },
+    {
+      "name": "Parallel Before",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/parallel/before?size=400000", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","parallel","before"], "query": [{"key":"size","value":"400000"}] } }
+    },
+    {
+      "name": "Parallel After",
+      "request": { "method": "GET", "url": { "raw": "http://localhost:8080/api/performance/parallel/after?size=400000", "protocol": "http", "host": ["localhost"], "port": "8080", "path": ["api","performance","parallel","after"], "query": [{"key":"size","value":"400000"}] } }
+    }
+  ]
+}
+
+
