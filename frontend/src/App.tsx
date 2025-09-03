@@ -30,6 +30,29 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
         <h3 style={{ margin: 0 }}>{title}</h3>
         <button onClick={run} disabled={loading}>{loading ? 'Running...' : 'Run'}</button>
       </div>
+      {(before.data?.executionTimeMs !== undefined && after.data?.executionTimeMs !== undefined) && (
+        <div className="compare-summary">
+          {(() => {
+            const b = before.data!.executionTimeMs
+            const a = after.data!.executionTimeMs
+            const diff = b - a
+            const pct = b > 0 ? Math.round((diff / b) * 100) : 0
+            const worst = Math.max(b, a) || 1
+            const bWidth = Math.max(2, Math.round((b / worst) * 100))
+            const aWidth = Math.max(2, Math.round((a / worst) * 100))
+            return (
+              <>
+                <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>Δ {diff} ms</span>
+                <span className={`chip ${diff > 0 ? 'good' : diff < 0 ? 'bad' : ''}`}>{diff > 0 ? `↓ ${pct}% faster` : diff < 0 ? `↑ ${Math.abs(pct)}% slower` : 'no change'}</span>
+                <div className="bars" style={{ width: '100%', maxWidth: 480 }}>
+                  <div className="bar before" style={{ width: bWidth + '%' }}><span>before {b} ms</span></div>
+                  <div className="bar after" style={{ width: aWidth + '%' }}><span>after {a} ms</span></div>
+                </div>
+              </>
+            )
+          })()}
+        </div>
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 12 }}>
         {[before, after].map((r) => (
           <div key={r.label} className="result-card" style={{ padding: 12, borderRadius: 6 }}>
