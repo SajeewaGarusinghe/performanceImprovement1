@@ -1,0 +1,9 @@
+:root { color-scheme: light dark; }
+body { margin: 0; background: #111; color: #eaeaea; font-family: Inter, system-ui, Arial; }
+button { cursor: pointer; padding: 8px 12px; border-radius: 6px; border: 1px solid #ccc; background: #fff; }
+input { padding: 6px 8px; border-radius: 6px; border: 1px solid #ccc; }
+
+.result-card { background: #ffffff; color: #111111; }
+.result-card pre { color: #333333; }
+
+

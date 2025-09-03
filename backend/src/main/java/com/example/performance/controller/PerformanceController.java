@@ -9,6 +9,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/performance")
+@CrossOrigin(origins = {"http://localhost:5173", "http://127.0.0.1:5173", "http://[::1]:5173"}, allowCredentials = "true")
 public class PerformanceController {
 
     private final PerformanceService performanceService;
