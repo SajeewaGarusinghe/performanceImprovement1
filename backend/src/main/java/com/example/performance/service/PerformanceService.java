@@ -107,7 +107,7 @@ public class PerformanceService {
         long memoryDelta = Math.max(0, used - baseline);
         long duration = System.currentTimeMillis() - start;
         log.info("Memory Before: time={} ms, deltaBytes={} (sum={})", duration, memoryDelta, sum);
-        return responseWithMemory(duration, sum, memoryDelta);
+        return responseMemoryOnly(sum, memoryDelta);
     }
 
     /**
@@ -135,7 +135,7 @@ public class PerformanceService {
         long memoryDelta = Math.max(0, used - baseline);
         long duration = System.currentTimeMillis() - start;
         log.info("Memory After: time={} ms, deltaBytes={} (sum={})", duration, memoryDelta, sum);
-        return responseWithMemory(duration, sum, memoryDelta);
+        return responseMemoryOnly(sum, memoryDelta);
     }
 
     /**
@@ -317,6 +317,13 @@ public class PerformanceService {
      */
     private Map<String, Object> responseWithMemory(long ms, Object resultSize, long memoryBytes) {
         Map<String, Object> map = response(ms, resultSize);
+        map.put("memoryUsedBytes", memoryBytes);
+        return map;
+    }
+
+    private Map<String, Object> responseMemoryOnly(Object resultSize, long memoryBytes) {
+        Map<String, Object> map = new LinkedHashMap<>();
+        map.put("result", resultSize);
         map.put("memoryUsedBytes", memoryBytes);
         return map;
     }

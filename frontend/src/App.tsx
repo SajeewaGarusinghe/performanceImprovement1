@@ -30,7 +30,7 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
         <h3 style={{ margin: 0 }}>{title}</h3>
         <button className="btn" onClick={run} disabled={loading}>{loading ? 'Running...' : 'Run'}</button>
       </div>
-      {(before.data?.executionTimeMs !== undefined && after.data?.executionTimeMs !== undefined) && (
+      {title.includes('Memory') === false && (before.data?.executionTimeMs !== undefined && after.data?.executionTimeMs !== undefined) && (
         <div className="compare-summary">
           {(() => {
             const b = before.data!.executionTimeMs
@@ -88,7 +88,7 @@ function Row({ title, onBefore, onAfter }: { title: string; onBefore: () => Prom
         {[before, after].map((r) => (
           <div key={r.label} className="result-card" style={{ padding: 12, borderRadius: 6 }}>
             <strong>{r.label}</strong>
-            <div>Time: {r.data?.executionTimeMs ?? '-' } ms</div>
+            {title.includes('Memory') === false && (<div>Time: {r.data?.executionTimeMs ?? '-' } ms</div>)}
             {r.data?.memoryUsedBytes !== undefined && (<div>Memory: {formatBytes(r.data.memoryUsedBytes)} ({r.data.memoryUsedBytes} B)</div>)}
             <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{r.error ? `Error: ${r.error}` : JSON.stringify(r.data?.result ?? {}, null, 2)}</pre>
           </div>
