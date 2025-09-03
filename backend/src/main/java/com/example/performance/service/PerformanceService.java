@@ -2,16 +2,15 @@ package com.example.performance.service;
 
 import com.example.performance.entity.Customer;
 import com.example.performance.entity.OrderItem;
-import com.example.performance.repository.CustomerRepository;
-import com.example.performance.repository.OrderItemRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 
 /**
  * PerformanceService contains small, self-contained demos that showcase a
@@ -34,12 +33,10 @@ public class PerformanceService {
 
     private static final Logger log = LoggerFactory.getLogger(PerformanceService.class);
 
-    private final CustomerRepository customerRepository;
-    private final OrderItemRepository orderItemRepository;
+    private final ServiceLogics optimized;
 
-    public PerformanceService(CustomerRepository customerRepository, OrderItemRepository orderItemRepository) {
-        this.customerRepository = customerRepository;
-        this.orderItemRepository = orderItemRepository;
+    public PerformanceService( ServiceLogics optimized) {
+        this.optimized = optimized;
     }
 
     /**
@@ -56,11 +53,7 @@ public class PerformanceService {
     @Transactional(readOnly = true)
     public Map<String, Object> nPlusOneBefore(List<Long> customerIds) {
         long start = System.currentTimeMillis();
-        Map<Long, List<OrderItem>> result = new HashMap<>();
-        for (Long id : customerIds) {
-            List<OrderItem> items = orderItemRepository.findByCustomerId(id);
-            result.put(id, items);
-        }
+        Map<Long, List<OrderItem>> result = optimized.nPlusOneLoopFetch(customerIds);
         long duration = System.currentTimeMillis() - start;
         log.info("N+1 Before Execution Time: {} ms", duration);
         return response(duration, result.size());
@@ -78,9 +71,7 @@ public class PerformanceService {
     @Transactional(readOnly = true)
     public Map<String, Object> nPlusOneAfter(List<Long> customerIds) {
         long start = System.currentTimeMillis();
-        List<OrderItem> all = orderItemRepository.findByCustomerIds(customerIds);
-        Map<Long, List<OrderItem>> grouped = all.stream()
-                .collect(Collectors.groupingBy(oi -> oi.getCustomer().getId()));
+        Map<Long, List<OrderItem>> grouped = optimized.batchFetchOrderItems(customerIds);
         long duration = System.currentTimeMillis() - start;
         log.info("N+1 After Execution Time: {} ms", duration);
         return response(duration, grouped.size());
@@ -97,17 +88,10 @@ public class PerformanceService {
      */
     public Map<String, Object> memoryBefore(int size) {
         long start = System.currentTimeMillis();
-        long baseline = currentUsedMemoryBytes();
-        List<int[]> heavy = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            heavy.add(new int[1024]);
-        }
-        int sum = heavy.stream().mapToInt(arr -> arr.length).sum();
-        long used = currentUsedMemoryBytes();
-        long memoryDelta = Math.max(0, used - baseline);
+        ServiceLogics.MemoryResult r = optimized.performWorkNoCleanup(size);
         long duration = System.currentTimeMillis() - start;
-        log.info("Memory Before: time={} ms, deltaBytes={} (sum={})", duration, memoryDelta, sum);
-        return responseMemoryOnly(sum, memoryDelta);
+        log.info("Memory Before: time={} ms, deltaBytes={} (sum={})", duration, r.memoryUsedBytes, r.sum);
+        return responseMemoryOnly(r.sum, r.memoryUsedBytes);
     }
 
     /**
@@ -121,21 +105,10 @@ public class PerformanceService {
      */
     public Map<String, Object> memoryAfter(int size) {
         long start = System.currentTimeMillis();
-        long baseline = currentUsedMemoryBytes();
-        List<int[]> heavy = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            heavy.add(new int[1024]);
-        }
-        int sum = heavy.stream().mapToInt(arr -> arr.length).sum();
-        heavy.clear();
-        heavy = null;
-        System.gc();
-        try { Thread.sleep(50); } catch (InterruptedException ignored) { }
-        long used = currentUsedMemoryBytes();
-        long memoryDelta = Math.max(0, used - baseline);
+        ServiceLogics.MemoryResult r = optimized.performWorkAndCleanup(size);
         long duration = System.currentTimeMillis() - start;
-        log.info("Memory After: time={} ms, deltaBytes={} (sum={})", duration, memoryDelta, sum);
-        return responseMemoryOnly(sum, memoryDelta);
+        log.info("Memory After: time={} ms, deltaBytes={} (sum={})", duration, r.memoryUsedBytes, r.sum);
+        return responseMemoryOnly(r.sum, r.memoryUsedBytes);
     }
 
     /**
@@ -147,12 +120,7 @@ public class PerformanceService {
      */
     public Map<String, Object> lookupBefore(int size, int target, int repeats) {
         long start = System.currentTimeMillis();
-        List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < size; i++) list.add(i);
-        int hits = 0;
-        for (int i = 0; i < repeats; i++) {
-            if (list.stream().anyMatch(x -> x == target)) hits++;
-        }
+        int hits = optimized.lookupUsingListAnyMatch(size, target, repeats);
         long duration = System.currentTimeMillis() - start;
         log.info("Lookup Before Execution Time: {} ms, hits={}", duration, hits);
         return response(duration, hits);
@@ -167,12 +135,7 @@ public class PerformanceService {
      */
     public Map<String, Object> lookupAfter(int size, int target, int repeats) {
         long start = System.currentTimeMillis();
-        Map<Integer, Boolean> map = new HashMap<>();
-        for (int i = 0; i < size; i++) map.put(i, Boolean.TRUE);
-        int hits = 0;
-        for (int i = 0; i < repeats; i++) {
-            if (map.containsKey(target)) hits++;
-        }
+        int hits = optimized.lookupUsingHashMap(size, target, repeats);
         long duration = System.currentTimeMillis() - start;
         log.info("Lookup After Execution Time: {} ms, hits={}", duration, hits);
         return response(duration, hits);
@@ -185,16 +148,10 @@ public class PerformanceService {
      */
     public Map<String, Object> streamSideEffectsBefore(int size) {
         long start = System.currentTimeMillis();
-        List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < size; i++) list.add(i);
-        List<Integer> out = new ArrayList<>();
-        list.stream()
-                .peek(out::add)
-                .map(i -> i * 2)
-                .toList();
+        int outSize = optimized.streamWithPeekSideEffects(size);
         long duration = System.currentTimeMillis() - start;
-        log.info("Stream Before Execution Time: {} ms, outSize={}", duration, out.size());
-        return response(duration, out.size());
+        log.info("Stream Before Execution Time: {} ms, outSize={}", duration, outSize);
+        return response(duration, outSize);
     }
 
     /**
@@ -205,18 +162,13 @@ public class PerformanceService {
      */
     public Map<String, Object> streamSideEffectsAfter(int size) {
         long start = System.currentTimeMillis();
-        List<Integer> out = new ArrayList<>();
-        for (int i = 0; i < size; i++) {
-            out.add(i);
-            int x = i * 2;
-        }
+        int outSize = optimized.streamFreeOfSideEffects(size);
         long duration = System.currentTimeMillis() - start;
-        log.info("Stream After Execution Time: {} ms, outSize={}", duration, out.size());
-        return response(duration, out.size());
+        log.info("Stream After Execution Time: {} ms, outSize={}", duration, outSize);
+        return response(duration, outSize);
     }
 
     // 5. Caching / Prefetch
-    private final Map<Long, Customer> customerCache = new ConcurrentHashMap<>();
 
     /**
      * CACHE BEFORE: Fetch each customer by id with a separate repository call
@@ -226,10 +178,7 @@ public class PerformanceService {
     @Transactional(readOnly = true)
     public Map<String, Object> cacheBefore(List<Long> customerIds) {
         long start = System.currentTimeMillis();
-        List<Customer> customers = new ArrayList<>();
-        for (Long id : customerIds) {
-            customers.add(customerRepository.findById(id).orElse(null));
-        }
+        List<Customer> customers = optimized.fetchCustomersIndividually(customerIds);
         long duration = System.currentTimeMillis() - start;
         log.info("Cache Before Execution Time: {} ms, size={}", duration, customers.size());
         return response(duration, customers.size());
@@ -243,17 +192,7 @@ public class PerformanceService {
     @Transactional(readOnly = true)
     public Map<String, Object> cacheAfter(List<Long> customerIds) {
         long start = System.currentTimeMillis();
-        List<Long> missing = customerIds.stream()
-                .filter(id -> !customerCache.containsKey(id))
-                .toList();
-        if (!missing.isEmpty()) {
-            List<Customer> found = customerRepository.findAllById(missing);
-            for (Customer c : found) customerCache.put(c.getId(), c);
-        }
-        List<Customer> customers = customerIds.stream()
-                .map(customerCache::get)
-                .filter(Objects::nonNull)
-                .toList();
+        List<Customer> customers = optimized.cachePrefetch(customerIds);
         long duration = System.currentTimeMillis() - start;
         log.info("Cache After Execution Time: {} ms, size={}", duration, customers.size());
         return response(duration, customers.size());
@@ -265,9 +204,7 @@ public class PerformanceService {
      */
     public Map<String, Object> parallelBefore(int size) {
         long start = System.currentTimeMillis();
-        List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < size; i++) list.add(i);
-        long sum = list.stream().mapToLong(i -> heavyCompute(i)).sum();
+        long sum = optimized.sequentialComputeSum(size);
         long duration = System.currentTimeMillis() - start;
         log.info("Parallel Before Execution Time: {} ms, sum={}", duration, sum);
         return response(duration, sum);
@@ -282,9 +219,7 @@ public class PerformanceService {
      */
     public Map<String, Object> parallelAfter(int size) {
         long start = System.currentTimeMillis();
-        List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < size; i++) list.add(i);
-        long sum = list.parallelStream().mapToLong(this::heavyCompute).sum();
+        long sum = optimized.parallelComputeSum(size);
         long duration = System.currentTimeMillis() - start;
         log.info("Parallel After Execution Time: {} ms, sum={}", duration, sum);
         return response(duration, sum);
